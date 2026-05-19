@@ -169,25 +169,59 @@ function PackingViewer({ container, placed, visibleCount }) {
     groupRef.current = group;
 
     const dom = renderer.domElement;
-    const onDown = (e) => { draggingRef.current = true; lastMouseRef.current = { x: e.clientX, y: e.clientY }; };
-    const onUp = () => { draggingRef.current = false; };
+    dom.style.touchAction = 'none';
+    const pointers = new Map();
+    let pinchDist = 0;
+
+    const onDown = (e) => {
+      dom.setPointerCapture?.(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1) {
+        draggingRef.current = true;
+        lastMouseRef.current = { x: e.clientX, y: e.clientY };
+      } else if (pointers.size === 2) {
+        draggingRef.current = false;
+        const [a, b] = [...pointers.values()];
+        pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+      }
+    };
     const onMove = (e) => {
-      if (!draggingRef.current) return;
-      const dx = e.clientX - lastMouseRef.current.x;
-      const dy = e.clientY - lastMouseRef.current.y;
-      rotationRef.current.y += dx * 0.01;
-      rotationRef.current.x += dy * 0.01;
-      rotationRef.current.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, rotationRef.current.x));
-      lastMouseRef.current = { x: e.clientX, y: e.clientY };
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pointers.size === 1 && draggingRef.current) {
+        const dx = e.clientX - lastMouseRef.current.x;
+        const dy = e.clientY - lastMouseRef.current.y;
+        rotationRef.current.y += dx * 0.01;
+        rotationRef.current.x += dy * 0.01;
+        rotationRef.current.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, rotationRef.current.x));
+        lastMouseRef.current = { x: e.clientX, y: e.clientY };
+      } else if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        const dist = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinchDist > 0 && dist > 0) {
+          const f = pinchDist / dist;
+          camera.position.multiplyScalar(f);
+        }
+        pinchDist = dist;
+      }
+    };
+    const onUp = (e) => {
+      dom.releasePointerCapture?.(e.pointerId);
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinchDist = 0;
+      if (pointers.size === 0) draggingRef.current = false;
     };
     const onWheel = (e) => {
       e.preventDefault();
       const f = e.deltaY > 0 ? 1.1 : 0.9;
       camera.position.multiplyScalar(f);
     };
-    dom.addEventListener('mousedown', onDown);
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('mousemove', onMove);
+    dom.addEventListener('pointerdown', onDown);
+    dom.addEventListener('pointermove', onMove);
+    dom.addEventListener('pointerup', onUp);
+    dom.addEventListener('pointercancel', onUp);
+    dom.addEventListener('pointerleave', onUp);
     dom.addEventListener('wheel', onWheel, { passive: false });
 
     let frameId;
@@ -212,9 +246,11 @@ function PackingViewer({ container, placed, visibleCount }) {
 
     return () => {
       cancelAnimationFrame(frameId);
-      dom.removeEventListener('mousedown', onDown);
-      window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('mousemove', onMove);
+      dom.removeEventListener('pointerdown', onDown);
+      dom.removeEventListener('pointermove', onMove);
+      dom.removeEventListener('pointerup', onUp);
+      dom.removeEventListener('pointercancel', onUp);
+      dom.removeEventListener('pointerleave', onUp);
       dom.removeEventListener('wheel', onWheel);
       window.removeEventListener('resize', onResize);
       renderer.dispose();
@@ -607,7 +643,7 @@ export default function App() {
           <main className="order-1 lg:order-2 relative bg-slate-950 h-[70vh] lg:h-auto min-h-[320px]">
             <div className="absolute top-4 left-4 z-10 text-[10px] tracking-[0.3em] uppercase text-slate-500 font-mono">
               <div>3D · Viewport</div>
-              <div className="text-slate-600 mt-1 normal-case tracking-wider">Drag to rotate · Scroll to zoom</div>
+              <div className="text-slate-600 mt-1 normal-case tracking-wider">Drag to rotate · Scroll / pinch to zoom</div>
             </div>
 
             <div className="absolute top-4 right-4 z-10 space-y-1 text-[10px] tracking-[0.15em] uppercase font-mono">
