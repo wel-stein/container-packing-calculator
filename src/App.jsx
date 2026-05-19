@@ -48,7 +48,7 @@ function packBoxes(container, boxTypes) {
   const items = [];
   boxTypes.forEach((bt, idx) => {
     if (bt.l <= 0 || bt.w <= 0 || bt.h <= 0) return;
-    const qty = bt.qty > 0 ? bt.qty : 99999;
+    const qty = Math.max(0, Math.floor(bt.qty) || 0);
     for (let i = 0; i < qty; i++) {
       items.push({ typeId: idx, l: bt.l, w: bt.w, h: bt.h, vol: bt.l * bt.w * bt.h });
     }
@@ -327,7 +327,6 @@ function QtyStepper({ value, onChange }) {
         value={value}
         min="0"
         step="1"
-        placeholder="∞"
         onChange={(e) => set(parseFloat(e.target.value))}
         className="w-full min-w-0 bg-transparent px-1 py-1.5 text-slate-100 font-mono text-xs text-center focus:outline-none tabular-nums"
       />
@@ -508,7 +507,7 @@ export default function App() {
               </button>
 
               <div className="text-[9px] text-slate-500 mt-2 leading-relaxed">
-                Qty = how many to pack. Use <span className="text-slate-300">−</span> / <span className="text-slate-300">+</span> or type a value. Leave at <span className="text-slate-300">0</span> (<span className="text-slate-300">∞</span>) for unlimited.
+                Qty = how many of this type to pack. Use <span className="text-slate-300">−</span> / <span className="text-slate-300">+</span> or type a value. <span className="text-slate-300">0</span> means none.
               </div>
             </section>
 
@@ -588,14 +587,21 @@ export default function App() {
               visibleCount={visibleCount}
             />
 
-            {result.total === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-center">
-                  <div className="text-amber-400 text-xs tracking-[0.3em] uppercase mb-2">No fit</div>
-                  <div className="text-slate-500 text-xs">Box dimensions exceed container</div>
+            {result.total === 0 && (() => {
+              const anyRequested = boxTypes.some(bt => bt.qty > 0 && bt.l > 0 && bt.w > 0 && bt.h > 0);
+              return (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center">
+                    <div className="text-amber-400 text-xs tracking-[0.3em] uppercase mb-2">
+                      {anyRequested ? 'No fit' : 'Empty container'}
+                    </div>
+                    <div className="text-slate-500 text-xs">
+                      {anyRequested ? 'Box dimensions exceed container' : 'Set a Qty above to start packing'}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </main>
         </div>
       </div>
