@@ -311,6 +311,36 @@ function NumField({ value, onChange, placeholder }) {
   );
 }
 
+function QtyStepper({ value, onChange }) {
+  const set = (v) => onChange(Math.max(0, Math.floor(v) || 0));
+  return (
+    <div className="flex items-stretch border border-cyan-500/20 bg-slate-950/60 focus-within:border-cyan-400 focus-within:ring-1 focus-within:ring-cyan-400/30 transition">
+      <button
+        type="button"
+        onClick={() => set(value - 1)}
+        disabled={value <= 0}
+        className="px-1.5 text-cyan-300/80 hover:text-cyan-300 hover:bg-cyan-500/10 disabled:opacity-30 disabled:hover:bg-transparent text-xs leading-none"
+        title="Decrease"
+      >−</button>
+      <input
+        type="number"
+        value={value}
+        min="0"
+        step="1"
+        placeholder="∞"
+        onChange={(e) => set(parseFloat(e.target.value))}
+        className="w-full min-w-0 bg-transparent px-1 py-1.5 text-slate-100 font-mono text-xs text-center focus:outline-none tabular-nums"
+      />
+      <button
+        type="button"
+        onClick={() => set((value || 0) + 1)}
+        className="px-1.5 text-cyan-300/80 hover:text-cyan-300 hover:bg-cyan-500/10 text-xs leading-none"
+        title="Increase"
+      >+</button>
+    </div>
+  );
+}
+
 function FieldWithLabel({ label, value, onChange, unit }) {
   return (
     <label className="block">
@@ -417,13 +447,13 @@ export default function App() {
                 <span className="text-[10px] text-slate-500 font-mono">02</span>
               </div>
 
-              <div className="grid grid-cols-[24px_1fr_50px_50px_50px_60px_28px] gap-1.5 mb-2 text-[9px] tracking-[0.15em] uppercase text-slate-500">
+              <div className="grid grid-cols-[24px_1fr_44px_44px_44px_96px_28px] gap-1.5 mb-2 text-[9px] tracking-[0.15em] uppercase text-slate-500">
                 <div></div>
                 <div>Name</div>
                 <div className="text-center">L</div>
                 <div className="text-center">W</div>
                 <div className="text-center">H</div>
-                <div className="text-center">Max</div>
+                <div className="text-center">Qty</div>
                 <div></div>
               </div>
 
@@ -434,7 +464,7 @@ export default function App() {
                   const wasSkipped = result.skippedTypeIds.includes(i);
                   return (
                     <div key={i} className="space-y-1">
-                      <div className="grid grid-cols-[24px_1fr_50px_50px_50px_60px_28px] gap-1.5 items-center">
+                      <div className="grid grid-cols-[24px_1fr_44px_44px_44px_96px_28px] gap-1.5 items-center">
                         <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: c.css }} />
                         <input
                           type="text" value={bt.name}
@@ -444,7 +474,10 @@ export default function App() {
                         <NumField value={bt.l} onChange={(v) => updateBoxType(i, 'l', v)} />
                         <NumField value={bt.w} onChange={(v) => updateBoxType(i, 'w', v)} />
                         <NumField value={bt.h} onChange={(v) => updateBoxType(i, 'h', v)} />
-                        <NumField value={bt.qty} onChange={(v) => updateBoxType(i, 'qty', Math.floor(v))} placeholder="∞" />
+                        <QtyStepper
+                          value={bt.qty}
+                          onChange={(v) => updateBoxType(i, 'qty', v)}
+                        />
                         <button
                           onClick={() => removeBoxType(i)}
                           disabled={boxTypes.length === 1}
@@ -475,7 +508,7 @@ export default function App() {
               </button>
 
               <div className="text-[9px] text-slate-500 mt-2 leading-relaxed">
-                Max = quantity limit. Leave at <span className="text-slate-300">0</span> for unlimited (fill the container).
+                Qty = how many to pack. Use <span className="text-slate-300">−</span> / <span className="text-slate-300">+</span> or type a value. Leave at <span className="text-slate-300">0</span> (<span className="text-slate-300">∞</span>) for unlimited.
               </div>
             </section>
 
