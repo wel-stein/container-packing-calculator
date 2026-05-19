@@ -417,6 +417,28 @@ export default function App() {
       .filter(s => s.short > 0);
   }, [boxTypes, result.counts]);
 
+  const visibleBoxesControl = result.total > 0 ? (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-[10px] tracking-[0.2em] uppercase">
+        <label className="text-slate-400">Visible boxes</label>
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className={`px-2 py-0.5 ${showAll ? 'bg-cyan-400 text-slate-950' : 'text-cyan-300 border border-cyan-500/30'}`}
+        >
+          {showAll ? 'All' : 'Slice'}
+        </button>
+      </div>
+      <input
+        type="range" min="0" max={result.total} value={visibleCount}
+        onChange={(e) => { setShowAll(false); setSliceCount(parseInt(e.target.value)); }}
+        className="w-full"
+      />
+      <div className="text-[10px] text-slate-500 font-mono text-right">
+        {visibleCount} / {result.total}
+      </div>
+    </div>
+  ) : null;
+
   useEffect(() => { setSliceCount(result.total); }, [result.total]);
 
   const addBoxType = () => {
@@ -471,6 +493,17 @@ export default function App() {
 
         <div className="grid lg:grid-cols-[440px_1fr] gap-0 lg:min-h-[calc(100vh-65px)]">
           <aside className="order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-cyan-500/20 p-6 space-y-6 bg-slate-950/40 lg:overflow-y-auto lg:max-h-[calc(100vh-65px)]">
+            {visibleBoxesControl && (
+              <section className="lg:hidden">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-6 h-px bg-cyan-400" />
+                  <h2 className="text-[10px] tracking-[0.3em] uppercase text-cyan-300">Visible Boxes</h2>
+                  <div className="flex-1 h-px bg-cyan-500/20" />
+                </div>
+                {visibleBoxesControl}
+              </section>
+            )}
+
             <section>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-6 h-px bg-cyan-400" />
@@ -612,25 +645,9 @@ export default function App() {
                 <Stat label="Container Vol." value={formatVolume(result.containerVol, unit)} small />
               </div>
 
-              {result.total > 0 && (
-                <div className="mt-5 space-y-2">
-                  <div className="flex items-center justify-between text-[10px] tracking-[0.2em] uppercase">
-                    <label className="text-slate-400">Visible boxes</label>
-                    <button
-                      onClick={() => setShowAll(!showAll)}
-                      className={`px-2 py-0.5 ${showAll ? 'bg-cyan-400 text-slate-950' : 'text-cyan-300 border border-cyan-500/30'}`}
-                    >
-                      {showAll ? 'All' : 'Slice'}
-                    </button>
-                  </div>
-                  <input
-                    type="range" min="0" max={result.total} value={visibleCount}
-                    onChange={(e) => { setShowAll(false); setSliceCount(parseInt(e.target.value)); }}
-                    className="w-full"
-                  />
-                  <div className="text-[10px] text-slate-500 font-mono text-right">
-                    {visibleCount} / {result.total}
-                  </div>
+              {visibleBoxesControl && (
+                <div className="mt-5 hidden lg:block">
+                  {visibleBoxesControl}
                 </div>
               )}
             </section>
