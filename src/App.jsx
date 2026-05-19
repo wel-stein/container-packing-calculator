@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { packBoxes } from './packing';
+import { usePacking } from './usePacking';
 import { colorFor } from './colors';
 import { formatVolume } from './utils/format';
 import PackingViewer from './PackingViewer';
@@ -24,7 +24,7 @@ export default function App() {
   const [showAll, setShowAll] = useState(true);
   const [sliceCount, setSliceCount] = useState(0);
 
-  const result = useMemo(() => packBoxes(container, boxTypes), [container, boxTypes]);
+  const { result, packing } = usePacking(container, boxTypes);
   const visibleCount = showAll ? result.total : Math.min(sliceCount, result.total);
 
   const shortages = useMemo(() => {
@@ -256,8 +256,16 @@ export default function App() {
               </div>
 
               <div className="border border-emerald-400/30 bg-emerald-950/20 p-5 mb-4">
-                <div className="text-[10px] tracking-[0.3em] uppercase text-emerald-300/70 mb-1">Total Boxes</div>
-                <div className="flex items-baseline gap-3">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-emerald-300/70">Total Boxes</div>
+                  {packing && (
+                    <div className="flex items-center gap-1.5 text-[9px] tracking-[0.2em] uppercase text-amber-300/80">
+                      <div className="w-1.5 h-1.5 bg-amber-400 animate-pulse" />
+                      Packing…
+                    </div>
+                  )}
+                </div>
+                <div className={`flex items-baseline gap-3 transition-opacity ${packing ? 'opacity-60' : ''}`}>
                   <span className="text-5xl font-bold text-emerald-300 tabular-nums">
                     {result.total.toLocaleString()}
                   </span>
