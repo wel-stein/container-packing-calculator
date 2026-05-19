@@ -423,8 +423,8 @@ export default function App() {
           </div>
         </header>
 
-        <div className="grid lg:grid-cols-[440px_1fr] gap-0 min-h-[calc(100vh-65px)]">
-          <aside className="border-r border-cyan-500/20 p-6 space-y-6 bg-slate-950/40 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 65px)' }}>
+        <div className="grid lg:grid-cols-[440px_1fr] gap-0 lg:min-h-[calc(100vh-65px)]">
+          <aside className="order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-cyan-500/20 p-6 space-y-6 bg-slate-950/40 lg:overflow-y-auto lg:max-h-[calc(100vh-65px)]">
             <section>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-6 h-px bg-cyan-400" />
@@ -563,7 +563,7 @@ export default function App() {
             </div>
           </aside>
 
-          <main className="relative bg-slate-950">
+          <main className="order-1 lg:order-2 relative bg-slate-950 h-[70vh] lg:h-auto min-h-[320px]">
             <div className="absolute top-4 left-4 z-10 text-[10px] tracking-[0.3em] uppercase text-slate-500 font-mono">
               <div>3D · Viewport</div>
               <div className="text-slate-600 mt-1 normal-case tracking-wider">Drag to rotate · Scroll to zoom</div>
