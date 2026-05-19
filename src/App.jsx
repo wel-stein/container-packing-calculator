@@ -18,10 +18,46 @@ const DEFAULT_BOX_TYPES = [
   { id: newId(), name: 'Box C', l: 20, w: 15, h: 15, qty: 0 },
 ];
 
+// Multipliers expressed in units-per-cm.
+const UNIT_FACTORS = { cm: 1, mm: 10, m: 0.01, in: 1 / 2.54 };
+const round3 = (v) => Math.round(v * 1000) / 1000;
+
+const STORAGE_KEY = 'packing-calculator/v1';
+
+function loadSaved() {
+  try {
+    const raw = typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== 'object') return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function bumpIdCounter(boxTypes) {
+  for (const bt of boxTypes) {
+    const n = parseInt(String(bt.id || '').replace(/^bt-/, ''), 10);
+    if (Number.isFinite(n) && n > nextBoxTypeId) nextBoxTypeId = n;
+  }
+}
+
 export default function App() {
-  const [unit, setUnit] = useState('cm');
-  const [container, setContainer] = useState({ L: 120, W: 80, H: 100 });
-  const [boxTypes, setBoxTypes] = useState(DEFAULT_BOX_TYPES);
+  const [unit, setUnit] = useState(() => loadSaved()?.unit ?? 'cm');
+  const [container, setContainer] = useState(() => {
+    const c = loadSaved()?.container;
+    return (c && typeof c.L === 'number' && typeof c.W === 'number' && typeof c.H === 'number')
+      ? c : { L: 120, W: 80, H: 100 };
+  });
+  const [boxTypes, setBoxTypes] = useState(() => {
+    const list = loadSaved()?.boxTypes;
+    if (Array.isArray(list) && list.length) {
+      bumpIdCounter(list);
+      return list;
+    }
+    return DEFAULT_BOX_TYPES;
+  });
   const [showAll, setShowAll] = useState(true);
   const [sliceCount, setSliceCount] = useState(0);
 
@@ -41,10 +77,35 @@ export default function App() {
 
   useEffect(() => { setSliceCount(result.total); }, [result.total]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ unit, container, boxTypes }));
+    } catch {
+      // Quota or unavailable storage — silently skip.
+    }
+  }, [unit, container, boxTypes]);
+
+  const changeUnit = (newUnit) => {
+    if (newUnit === unit || !UNIT_FACTORS[newUnit]) return;
+    const f = UNIT_FACTORS[newUnit] / UNIT_FACTORS[unit];
+    setContainer({
+      L: round3(container.L * f),
+      W: round3(container.W * f),
+      H: round3(container.H * f),
+    });
+    setBoxTypes(boxTypes.map(bt => ({
+      ...bt,
+      l: round3(bt.l * f),
+      w: round3(bt.w * f),
+      h: round3(bt.h * f),
+    })));
+    setUnit(newUnit);
+  };
+
   const addBoxType = () => {
     setBoxTypes([...boxTypes, {
       id: newId(),
-      name: `Box ${String.fromCharCode(65 + boxTypes.length)}`,
+      name: `Box ${boxTypes.length + 1}`,
       l: 20, w: 20, h: 20, qty: 0,
     }]);
   };
@@ -106,7 +167,9 @@ export default function App() {
           </div>
           <div className="flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase">
             {['cm', 'in', 'mm', 'm'].map(u => (
-              <button key={u} onClick={() => setUnit(u)}
+              <button key={u} onClick={() => changeUnit(u)}
+                aria-pressed={unit === u}
+                title={`Convert all dimensions to ${u}`}
                 className={`px-3 py-1.5 transition ${unit === u ? 'bg-cyan-400 text-slate-950 font-bold' : 'text-slate-500 hover:text-cyan-300'}`}>
                 {u}
               </button>

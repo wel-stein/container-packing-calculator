@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { colorFor } from './colors';
 
@@ -9,6 +9,7 @@ export default function PackingViewer({ container, placed, visibleCount }) {
   const rotationRef = useRef({ x: 0.5, y: 0.7 });
   const draggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+  const [webglError, setWebglError] = useState(null);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -20,7 +21,13 @@ export default function PackingViewer({ container, placed, visibleCount }) {
     scene.background = new THREE.Color(0x0a0e1a);
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+    } catch (err) {
+      setWebglError(err && err.message ? err.message : 'WebGL is not available in this browser.');
+      return;
+    }
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     mount.appendChild(renderer.domElement);
@@ -190,6 +197,24 @@ export default function PackingViewer({ container, placed, visibleCount }) {
     camera.position.set(maxDim * 1.5, maxDim * 1.2, maxDim * 1.5);
     camera.lookAt(0, 0, 0);
   }, [container, placed, visibleCount]);
+
+  if (webglError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center p-6">
+        <div className="max-w-md text-center border border-amber-500/40 bg-amber-950/20 p-6">
+          <div className="text-amber-300 text-xs tracking-[0.3em] uppercase mb-2">
+            WebGL unavailable
+          </div>
+          <div className="text-slate-400 text-xs leading-relaxed mb-3">
+            Your browser couldn't initialize a 3D renderer. The packing calculation still works — only the visualization is disabled.
+          </div>
+          <div className="text-[10px] text-slate-600 font-mono break-words">
+            {webglError}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
