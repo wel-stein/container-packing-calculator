@@ -1,5 +1,8 @@
+import { useNumericInput } from '../utils/useNumericInput';
+
 export default function QtyStepper({ value, onChange, ariaLabel }) {
   const set = (v) => onChange(Math.max(0, Math.floor(v) || 0));
+  const input = useNumericInput(value, onChange, { integer: true });
   return (
     <div className="flex items-stretch border border-cyan-500/20 bg-slate-950/60 focus-within:border-cyan-400 focus-within:ring-1 focus-within:ring-cyan-400/30 transition">
       <button
@@ -11,11 +14,10 @@ export default function QtyStepper({ value, onChange, ariaLabel }) {
       >−</button>
       <input
         type="number"
-        value={value}
         min="0"
         step="1"
         aria-label={ariaLabel}
-        onChange={(e) => set(parseFloat(e.target.value))}
+        {...input}
         className="w-full min-w-0 bg-transparent px-1 py-1.5 text-slate-100 font-mono text-xs text-center focus:outline-none tabular-nums"
       />
       <button

@@ -1,12 +1,13 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { usePacking } from './usePacking';
 import { colorFor } from './colors';
 import { formatVolume } from './utils/format';
-import PackingViewer from './PackingViewer';
 import NumField from './components/NumField';
 import QtyStepper from './components/QtyStepper';
 import FieldWithLabel from './components/FieldWithLabel';
 import Stat from './components/Stat';
+
+const PackingViewer = lazy(() => import('./PackingViewer'));
 
 let nextBoxTypeId = 0;
 const newId = () => `bt-${++nextBoxTypeId}`;
@@ -332,11 +333,20 @@ export default function App() {
               </div>
             )}
 
-            <PackingViewer
-              container={container}
-              placed={result.placed}
-              visibleCount={visibleCount}
-            />
+            <Suspense fallback={
+              <div className="absolute inset-0 flex items-center justify-center text-[10px] tracking-[0.3em] uppercase text-slate-500 font-mono pointer-events-none">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
+                  Loading 3D viewport…
+                </div>
+              </div>
+            }>
+              <PackingViewer
+                container={container}
+                placed={result.placed}
+                visibleCount={visibleCount}
+              />
+            </Suspense>
 
             {result.total === 0 && (() => {
               const anyRequested = boxTypes.some(bt => bt.qty > 0 && bt.l > 0 && bt.w > 0 && bt.h > 0);
