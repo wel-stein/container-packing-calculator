@@ -370,6 +370,17 @@ export default function App() {
   const result = useMemo(() => packBoxes(container, boxTypes), [container, boxTypes]);
   const visibleCount = showAll ? result.total : Math.min(sliceCount, result.total);
 
+  const shortages = useMemo(() => {
+    return boxTypes
+      .map((bt, idx) => {
+        const requested = Math.max(0, Math.floor(bt.qty) || 0);
+        const packed = result.counts[idx] || 0;
+        const short = requested - packed;
+        return { idx, name: bt.name, requested, packed, short };
+      })
+      .filter(s => s.short > 0);
+  }, [boxTypes, result.counts]);
+
   useEffect(() => { setSliceCount(result.total); }, [result.total]);
 
   const addBoxType = () => {
@@ -511,6 +522,37 @@ export default function App() {
               </div>
             </section>
 
+            {shortages.length > 0 && (
+              <div role="alert" className="border border-red-500/40 bg-red-950/30 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-1.5 bg-red-400 animate-pulse" />
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-red-300 font-bold">
+                    Doesn't fit
+                  </div>
+                </div>
+                <div className="text-[10px] text-red-100/80 mb-2 leading-relaxed">
+                  The container is too small to hold every box you requested:
+                </div>
+                <ul className="space-y-1 text-[10px] font-mono">
+                  {shortages.map(s => (
+                    <li key={s.idx} className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 shrink-0" style={{ backgroundColor: colorFor(s.idx).css }} />
+                        <span className="text-slate-200 truncate">{s.name}</span>
+                      </span>
+                      <span className="text-red-300 tabular-nums shrink-0">
+                        {s.packed} / {s.requested}
+                        <span className="text-red-400/70"> (−{s.short})</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="text-[9px] text-red-200/60 mt-2 leading-relaxed">
+                  Reduce a Qty, shrink the box, or enlarge the container.
+                </div>
+              </div>
+            )}
+
             <section>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-6 h-px bg-emerald-400" />
@@ -580,6 +622,29 @@ export default function App() {
                 );
               })}
             </div>
+
+            {shortages.length > 0 && (
+              <div
+                role="alert"
+                className="absolute bottom-4 left-4 right-4 z-10 border border-red-500/50 bg-red-950/80 backdrop-blur-sm px-3 py-2 text-[10px] font-mono"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-1.5 h-1.5 bg-red-400 animate-pulse shrink-0" />
+                  <span className="tracking-[0.25em] uppercase text-red-300 font-bold">
+                    {shortages.length === 1 ? '1 box type' : `${shortages.length} box types`} didn't all fit
+                  </span>
+                </div>
+                <div className="text-red-100/80 leading-relaxed">
+                  {shortages.map((s, i) => (
+                    <span key={s.idx}>
+                      {i > 0 && <span className="text-red-400/40"> · </span>}
+                      <span className="text-slate-200">{s.name}</span>
+                      <span className="text-red-300"> −{s.short}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <PackingViewer
               container={container}
